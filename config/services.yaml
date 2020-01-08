@@ -25,3 +25,32 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    Predis\Client:
+
+    Ackintosh\Ganesha\Storage\Adapter\Redis:
+        arguments:
+            - '@Predis\Client'
+
+    Ackintosh\Ganesha:
+        factory: ['Ackintosh\Ganesha\Builder', 'build']
+        arguments:
+            - timeWindow: 30
+              failureRateThreshold: 50
+              minimumRequests: 10
+              intervalToHalfOpen: 5
+              adapter: '@Ackintosh\Ganesha\Storage\Adapter\Redis'
+
+    Ackintosh\Ganesha\GuzzleMiddleware:
+        arguments:
+            - '@Ackintosh\Ganesha'
+
+    GuzzleHttp\HandlerStack:
+        factory: ['GuzzleHttp\HandlerStack', 'create']
+        calls:
+            - [ 'push', [ '@Ackintosh\Ganesha\GuzzleMiddleware' ]]
+
+    GuzzleHttp\Client:
+        arguments:
+            - handler: '@GuzzleHttp\HandlerStack'
+              base_uri: 'https://randomuser.me'
